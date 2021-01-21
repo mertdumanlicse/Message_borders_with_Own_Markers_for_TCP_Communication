@@ -1,0 +1,78 @@
+using System;
+using System.IO;
+using System.Net;
+using System.Net.Sockets;
+using System.Text;
+class MarkerTcpServer
+{
+    public static void Main()
+    {
+        string data;
+        IPEndPoint ipep = new IPEndPoint(IPAddress.Any, 9050);
+
+        Socket newsock = new Socket(AddressFamily.InterNetwork,
+                        SocketType.Stream, ProtocolType.Tcp);
+
+        newsock.Bind(ipep);
+        newsock.Listen(10);
+        Console.WriteLine("Waiting for a client...");
+
+        Socket client = newsock.Accept();
+        IPEndPoint newclient = (IPEndPoint)client.RemoteEndPoint;
+        Console.WriteLine("Connected with {0} at port {1}",
+                        newclient.Address, newclient.Port);
+
+        NetworkStream ns = new NetworkStream(client);
+        StreamReader sr = new StreamReader(ns);
+        StreamWriter sw = new StreamWriter(ns);
+
+        string welcome = "Welcome to my test server";
+        sw.WriteLine(welcome);
+        sw.Flush();
+
+        while (true)
+        {
+            try
+            {
+                data = sr.ReadLine();
+            }
+            catch (IOException)
+            {
+                break;
+            }
+            byte[] bytes = Encoding.ASCII.GetBytes(data);
+            string asciiString = Encoding.ASCII.GetString(bytes, 0, bytes.Length);
+            int y = 0;
+            while(y < bytes.Length){
+                    while (bytes[y] == 44)
+                    {
+                        if (bytes.Length - 1 != y)
+                        {
+                            y = y + 1;
+                        }
+                        if (bytes.Length == 1) {
+                        Console.WriteLine("\n");
+                        break;
+                    }
+                        if(bytes.Length == y + 1)
+                    {
+                        Console.WriteLine("\n");
+                        break;
+                    }
+                    Console.WriteLine("\n");
+                    }
+
+                if ((y==0 && bytes[y]!=44) || (y == bytes.Length-1 && bytes[y]!=44) ||(0 < y && y < bytes.Length-1))
+                Console.Write(asciiString[y]);
+                y = y + 1;
+            }
+            sw.WriteLine(asciiString);
+
+            sw.Flush();
+        }
+        Console.WriteLine("Disconnected from {0}", newclient.Address);
+        sw.Close();
+        sr.Close();
+        ns.Close();
+    }
+}
